@@ -96,9 +96,13 @@ This solution creates a **mystical fortune telling experience** using modern AI 
   Determines which tool to invoke (or when to end chat) based on detected intent.
 
 ---
+## ✨ Challenges Faced
 
-## ✨ Summary
+- I had never used LangGraph before, so I had to watch many tutorials to understand how it works.
+- Initially, I tried to make the graph too complicated by combining results and invoking tools again. I solved this by starting fresh and keeping the design simple—within the limits of what I could manage.
+- The model initially told me it couldn't read the image input directly. However, the real issue was that I wasn’t calling the tools correctly. It took me some time to debug and understand how tool invocation works and trace whether the tools were actually being called.
 
-This implementation combines cutting-edge **AI capabilities** with a **highly personalized**, entertaining, and mystical user experience. Whether through palm reading, numerology, or life guidance, _“nongpalm หมอลักฟันทิ้ง”_ brings AI magic to the world of digital fortune telling.
+
+
 
 ---
