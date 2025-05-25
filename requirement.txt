@@ -1,0 +1,10 @@
+python-dotenv
+langgraph
+langchain
+langchain-openai
+langchain-community
+chromadb
+langchain-chroma
+gradio
+ipython
+jupyter
