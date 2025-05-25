@@ -10,7 +10,8 @@ We recommend using the [Anaconda](https://www.anaconda.com/) package manager to 
 ```bash
 2. conda create -n langgraph_env python=3.10 ipython && conda activate langgraph_env && pip install langgraph langchain langchain_openai langchain_community python-dotenv chromadb langchain_chroma gradio
 ```
-3. copy the code from python.py then run
+3. copy the code from python.py please fill in your api key <img width="406" alt="image" src="https://github.com/user-attachments/assets/42fd78d0-0a3b-4c3f-888c-1adb34f8940a" />
+then run
 
 # 🔮 AI Fortune Teller Implementation: "nongpalm หมอลักฟันทิ้ง"
 
