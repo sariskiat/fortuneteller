@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+AI Fortune Teller Chatbot with LangGraph and Gradio
+A sophisticated chatbot that provides personalized fortune telling using an agentic framework.
+"""
 
 import gradio as gr
 import base64
@@ -13,23 +17,29 @@ from langchain_core.tools import tool
 from typing import Annotated, Sequence, TypedDict
 from langgraph.graph.message import add_messages
 import os
-#please fill in you api key
-OPENAI_API_KEY = "Maibok rok"
 
+# Set OpenAI API Key
+# Replace with your actual API key or use environment variable
+OPENAI_API_KEY = "AA"
+
+# Define state with chat history
 class GraphState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
 
+# Chat history storage
 class ChatHistory:
     def __init__(self):
         self.conversation_history: List[BaseMessage] = []
     
     def add_message(self, message: BaseMessage):
+        """Add a message to the conversation history"""
         try:
             self.conversation_history.append(message)
         except Exception as e:
             print(f"Error adding message to history: {e}")
     
     def get_history(self) -> List[BaseMessage]:
+        """Get the full conversation history"""
         try:
             return self.conversation_history.copy()
         except Exception as e:
@@ -37,20 +47,24 @@ class ChatHistory:
             return []
     
     def clear_history(self):
+        """Clear the conversation history"""
         try:
             self.conversation_history = []
         except Exception as e:
             print(f"Error clearing history: {e}")
     
     def get_recent_history(self, num_messages: int = 10) -> List[BaseMessage]:
+        """Get the most recent N messages"""
         try:
             return self.conversation_history[-num_messages:] if self.conversation_history else []
         except Exception as e:
             print(f"Error getting recent history: {e}")
             return []
 
+# Initialize global chat history
 chat_history = ChatHistory()
 
+# Initialize the model
 try:
     model = ChatOpenAI(
         model="gpt-4o-mini", 
@@ -61,7 +75,9 @@ except Exception as e:
     print(f"Error initializing model: {e}")
     model = None
 
+# Define tools
 def get_base64_image(image_path: str) -> str:
+    """Convert an image file to a base64 string."""
     try:
         with open(image_path, "rb") as image_file:
             base64_string = base64.b64encode(image_file.read()).decode('utf-8')
@@ -73,6 +89,7 @@ def get_base64_image(image_path: str) -> str:
 
 @tool
 def image_analysis_tool(image_path: str) -> str:
+    """Analyze a handprint image and provide fortune telling interpretation."""
     try:
         if not model:
             return "Error: Model not initialized"
@@ -110,6 +127,7 @@ def image_analysis_tool(image_path: str) -> str:
 
 @tool
 def numerology_reading(name: str, birth_date: str) -> str:
+    """Provide numerology-based fortune reading using name and birth date."""
     try:
         if not model:
             return "Error: Model not initialized"
@@ -134,6 +152,7 @@ Use mystical language with emojis 🔮✨🌟⭐🌙 and speak as the wise fortu
 
 @tool
 def provide_life_guidance(area: str, context: str) -> str:
+    """Provide mystical guidance for specific life areas (love, career, wealth)."""
     try:
         if not model:
             return "Error: Model not initialized"
@@ -149,20 +168,24 @@ Provide specific, actionable mystical advice while maintaining the mystical pers
     except Exception as e:
         return f"🔮 The cosmic guidance channels are disrupted: {str(e)}"
 
+# Create tool list
 tools = [numerology_reading, image_analysis_tool, provide_life_guidance]
 
+# Bind tools to model
 try:
     model_with_tools = model.bind_tools(tools) if model else None
 except Exception as e:
     print(f"Error binding tools to model: {e}")
     model_with_tools = None
 
+# Create tool node
 try:
     tool_node = ToolNode(tools)
 except Exception as e:
     print(f"Error creating tool node: {e}")
     tool_node = None
 
+# Define agent node with history awareness
 def agent_node(state: GraphState) -> GraphState:
     try:
         if not model_with_tools:
@@ -189,6 +212,7 @@ Always maintain your mystical persona while being helpful and engaging. Make eac
 When users first arrive, greet them warmly and ask for their name and birth date to provide personalized readings.
 """)
         
+        # Get recent conversation history and combine with current messages
         recent_history = chat_history.get_recent_history(8)
         all_messages = [system_prompt] + recent_history + state["messages"]
         
@@ -197,7 +221,9 @@ When users first arrive, greet them warmly and ask for their name and birth date
     except Exception as e:
         return {"messages": [AIMessage(content=f"🔮 The mystical energies encountered a disturbance: {e}")]}
 
+# Decision function
 def should_continue(state: GraphState) -> str:
+    """Decide whether to continue with tools or end"""
     try:
         messages = state["messages"]
         last_message = messages[-1]
@@ -210,6 +236,7 @@ def should_continue(state: GraphState) -> str:
         print(f"Error in should_continue: {e}")
         return "end"
 
+# Build the graph
 try:
     workflow = StateGraph(GraphState)
     workflow.add_node("agent", agent_node)
@@ -237,23 +264,31 @@ except Exception as e:
     print(f"Error building workflow: {e}")
     app = None
 
+# Gradio interface functions
 def chat_with_fortune_teller(message, history):
+    """Main chat function for Gradio interface."""
     try:
         if not app:
             return "🔮 The mystical portal is temporarily closed. Please try again later."
             
+        # Create user message
         user_message = HumanMessage(content=message)
         chat_history.add_message(user_message)
         
+        # Create initial state
         initial_state = {"messages": [user_message]}
         
+        # Run the graph for fortune reading
         result = app.invoke(initial_state)
         
+        # Get AI response
         ai_response = result["messages"][-1]
         chat_history.add_message(ai_response)
         
+        # Store the original fortune reading
         original_fortune = ai_response.content
         
+        # Create second invocation for product recommendations
         product_prompt = HumanMessage(content=f"""
         Based on this fortune reading: "{original_fortune}"
         
@@ -271,13 +306,17 @@ def chat_with_fortune_teller(message, history):
         Make it sound mystical and personalized to their reading. Use emojis 🔮✨💎🌟
         """)
         
+        # Create state for product recommendations
         product_state = {"messages": [product_prompt]}
         
+        # Run the graph again for product recommendations
         product_result = app.invoke(product_state)
         product_response = product_result["messages"][-1]
         
+        # Add product recommendation to chat history
         chat_history.add_message(product_response)
         
+        # Concatenate original fortune with product recommendations
         combined_response = f"{original_fortune}\n\n---\n\n🛍️ **MYSTICAL RECOMMENDATIONS FOR YOUR JOURNEY** 🛍️\n\n{product_response.content}"
         
         return combined_response
@@ -286,19 +325,25 @@ def chat_with_fortune_teller(message, history):
         return f"🔮 The cosmic energies encountered interference: {str(e)}"
 
 def analyze_handprint_image(image_file):
+    """Handle handprint image analysis."""
     if image_file is None:
         return "🔮 Please upload a clear image of your palm for mystical analysis."
     
     try:
+        # Get the file path
         image_path = image_file.name if hasattr(image_file, 'name') else str(image_file)
         
+        # Add message to chat history
         user_message = HumanMessage(content="I have uploaded my handprint image for analysis.")
         chat_history.add_message(user_message)
         
+        # Create tool call message
         tool_message = HumanMessage(content=f"Please analyze this handprint image: {image_path}")
         
+        # Create state
         initial_state = {"messages": [tool_message]}
         
+        # Run the graph
         result = app.invoke(initial_state)
         ai_response = result["messages"][-1]
         
@@ -309,6 +354,7 @@ def analyze_handprint_image(image_file):
         return f"🔮 The palm reading energies are disturbed: {str(e)}"
 
 def quick_reading(topic):
+    """Generate quick readings for specific topics."""
     try:
         messages = {
             "Love": "🔮 Please tell me about my love and romance fortune. What do the cosmic energies reveal about my romantic future?",
@@ -322,13 +368,16 @@ def quick_reading(topic):
         return f"🔮 Error generating {topic} reading: {str(e)}"
 
 def reset_conversation():
+    """Reset the chat history."""
     try:
         chat_history.clear_history()
         return None, "🔮 The cosmic slate has been cleared. Welcome back to nongpalm หมอลักฟันทิ้ง's mystical parlor! ✨"
     except Exception as e:
         return None, f"🔮 Error resetting: {str(e)}"
 
+# Create Gradio interface
 def create_gradio_app():
+    """Create the Gradio interface."""
     
     with gr.Blocks(
         title="🔮 AI Fortune Teller - nongpalm หมอลักฟันทิ้ง", 
@@ -402,6 +451,7 @@ def create_gradio_app():
                 - 💰 **Wealth**: Financial prosperity and abundance
                 """)
         
+        # Event handlers
         def respond(message, chat_history_ui):
             if not message.strip():
                 return chat_history_ui, ""
@@ -422,6 +472,7 @@ def create_gradio_app():
             chat_history_ui.append((question, bot_message))
             return chat_history_ui
         
+        # Bind events
         submit_btn.click(respond, [msg, chatbot], [chatbot, msg])
         msg.submit(respond, [msg, chatbot], [chatbot, msg])
         
@@ -446,8 +497,10 @@ def create_gradio_app():
     
     return interface
 
+# Main execution
 if __name__ == "__main__":
     try:
+        # Create and launch the app
         gradio_app = create_gradio_app()
         gradio_app.launch(
             server_name="0.0.0.0",
