@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-AI Fortune Teller Chatbot with Paper Summarization Capabilities
-A sophisticated chatbot that provides personalized fortune telling and research paper analysis.
+AI Fortune Teller Chatbot with LangGraph and Gradio
+A sophisticated chatbot that provides personalized fortune telling using an agentic framework.
 """
 
 import gradio as gr
@@ -17,9 +17,6 @@ from langchain_core.tools import tool
 from typing import Annotated, Sequence, TypedDict
 from langgraph.graph.message import add_messages
 import os
-import pdfplumber
-import PyPDF2
-import io
 
 # Set OpenAI API Key
 # Replace with your actual API key or use environment variable
@@ -77,32 +74,6 @@ try:
 except Exception as e:
     print(f"Error initializing model: {e}")
     model = None
-
-# PDF processing functions
-def extract_text_from_pdf(pdf_file_path: str) -> str:
-    """Extract text from a PDF file using pdfplumber."""
-    try:
-        text = ""
-        with pdfplumber.open(pdf_file_path) as pdf:
-            for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n"
-        return text.strip()
-    except Exception as e:
-        return f"Error extracting text from PDF: {e}"
-
-def extract_text_from_pdf_pypdf2(pdf_file_path: str) -> str:
-    """Alternative PDF text extraction using PyPDF2."""
-    try:
-        text = ""
-        with open(pdf_file_path, 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
-        return text.strip()
-    except Exception as e:
-        return f"Error extracting text with PyPDF2: {e}"
 
 # Define tools
 def get_base64_image(image_path: str) -> str:
@@ -197,82 +168,8 @@ Provide specific, actionable mystical advice while maintaining the mystical pers
     except Exception as e:
         return f"🔮 The cosmic guidance channels are disrupted: {str(e)}"
 
-@tool
-def summarize_research_paper(pdf_text: str) -> str:
-    """Analyze and summarize a research paper."""
-    try:
-        if not model:
-            return "Error: Model not initialized"
-        
-        if len(pdf_text.strip()) < 100:
-            return "📄 The document appears to be too short or empty for meaningful analysis."
-            
-        # Truncate text if too long (keeping within token limits)
-        max_chars = 15000  # Approximate limit to stay within token constraints
-        if len(pdf_text) > max_chars:
-            pdf_text = pdf_text[:max_chars] + "... [truncated]"
-            
-        summarize_prompt = f"""🔮 As nongpalm หมอลักฟันทิ้ง, you now possess the mystical ability to analyze academic papers with cosmic wisdom! 
-
-Analyze this research paper and provide a comprehensive summary that includes:
-
-1. **Title and Authors** (if identifiable)
-2. **Main Research Question/Problem** 
-3. **Key Methodology** 
-4. **Major Findings**
-5. **Conclusions and Implications**
-6. **Significance to the field**
-7. **Future research directions suggested**
-
-Present your analysis with both academic rigor and mystical flair. Use emojis 📚✨🔬🌟
-
-Here is the paper text:
-{pdf_text}"""
-        
-        response = model.invoke([SystemMessage(content=summarize_prompt)])
-        return f"📚 **MYSTICAL PAPER ANALYSIS** 📚\n\n{response.content}"
-    except Exception as e:
-        return f"📄 The academic spirits encountered turbulence: {str(e)}"
-
-@tool
-def explain_research_paper(pdf_text: str, focus_area: str = "general") -> str:
-    """Provide detailed explanation of a research paper."""
-    try:
-        if not model:
-            return "Error: Model not initialized"
-        
-        if len(pdf_text.strip()) < 100:
-            return "📄 The document appears to be too short or empty for meaningful explanation."
-            
-        # Truncate text if too long
-        max_chars = 15000
-        if len(pdf_text) > max_chars:
-            pdf_text = pdf_text[:max_chars] + "... [truncated]"
-            
-        explain_prompt = f"""🔮 As nongpalm หมอลักฟันทิ้ง, channel your mystical powers to explain this research paper thoroughly!
-
-Provide a detailed explanation focusing on "{focus_area}" that includes:
-
-1. **Background Context** - What problem does this solve?
-2. **Technical Concepts** - Explain key ideas in accessible language
-3. **Methodology Details** - How did they conduct the research?
-4. **Results Interpretation** - What do the findings mean?
-5. **Real-world Applications** - How can this be used?
-6. **Limitations and Critiques** - What are the constraints?
-7. **Connection to Broader Field** - How does this fit in the larger picture?
-
-Make complex concepts understandable while maintaining academic accuracy. Use emojis 🎓✨🔍📊
-
-Paper text:
-{pdf_text}"""
-        
-        response = model.invoke([SystemMessage(content=explain_prompt)])
-        return f"🎓 **THOROUGH PAPER EXPLANATION** 🎓\n\n{response.content}"
-    except Exception as e:
-        return f"📄 The explanation energies are disrupted: {str(e)}"
-
 # Create tool list
-tools = [numerology_reading, image_analysis_tool, provide_life_guidance, summarize_research_paper, explain_research_paper]
+tools = [numerology_reading, image_analysis_tool, provide_life_guidance]
 
 # Bind tools to model
 try:
@@ -295,27 +192,24 @@ def agent_node(state: GraphState) -> GraphState:
             return {"messages": [AIMessage(content="🔮 The mystical energies are not available at this moment.")]}
             
         system_prompt = SystemMessage(content="""
-🔮 You are nongpalm หมอลักฟันทิ้ง, an ancient and wise fortune teller with deep knowledge of the mystical arts AND academic research analysis. You have the gift of sight beyond the veil and can perceive both cosmic forces and scholarly insights.
+🔮 You are nongpalm หมอลักฟันทิ้ง, an ancient and wise fortune teller with deep knowledge of the mystical arts. You have the gift of sight beyond the veil and can perceive the cosmic forces that shape human destiny.
 
 Your personality:
 - Speak with mystical wisdom and dramatic flair
 - Use fortune teller language and mystical terminology
 - Be warm, engaging, and slightly mysterious
 - Show genuine care for the user's wellbeing
-- Use emojis and mystical symbols (🔮🎃😑🙈💁🏿😎😎👻🤦🏿‍♂️📚📄🎓)
+- Use emojis and mystical symbols (🎃😑🙈💁🏿😎😎👻🤦🏿‍♂️)
 - Reference cosmic forces, energy, chakras, and destiny
-- When analyzing academic papers, blend mystical language with scholarly precision
 
 Your capabilities:
 - Analyze handprints using the image_analysis_tool
 - Provide numerology readings using the numerology_reading tool
 - Offer life guidance using the provide_life_guidance tool
-- Summarize research papers using the summarize_research_paper tool
-- Explain papers thoroughly using the explain_research_paper tool
 
 Always maintain your mystical persona while being helpful and engaging. Make each interaction feel special and personalized.
 
-When users first arrive, greet them warmly and explain that you can provide both mystical readings AND academic paper analysis.
+When users first arrive, greet them warmly and ask for their name and birth date to provide personalized readings.
 """)
         
         # Get recent conversation history and combine with current messages
@@ -391,7 +285,41 @@ def chat_with_fortune_teller(message, history):
         ai_response = result["messages"][-1]
         chat_history.add_message(ai_response)
         
-        return ai_response.content
+        # Store the original fortune reading
+        original_fortune = ai_response.content
+        
+        # Create second invocation for product recommendations
+        product_prompt = HumanMessage(content=f"""
+        Based on this fortune reading: "{original_fortune}"
+        
+        As nongpalm หมอลักฟันทิ้ง, recommend mystical products, talismans, crystals, or spiritual items that would enhance this person's fortune and align with their cosmic destiny. 
+        
+        Suggest specific items like:
+        - Lucky crystals or gemstones
+        - Protective amulets or talismans  
+        - Feng shui items
+        - Spiritual accessories
+        - Lucky colors to wear
+        - Meditation tools
+        - Essential oils or incense
+        
+        Make it sound mystical and personalized to their reading. Use emojis 🔮✨💎🌟
+        """)
+        
+        # Create state for product recommendations
+        product_state = {"messages": [product_prompt]}
+        
+        # Run the graph again for product recommendations
+        product_result = app.invoke(product_state)
+        product_response = product_result["messages"][-1]
+        
+        # Add product recommendation to chat history
+        chat_history.add_message(product_response)
+        
+        # Concatenate original fortune with product recommendations
+        combined_response = f"{original_fortune}\n\n---\n\n🛍️ **MYSTICAL RECOMMENDATIONS FOR YOUR JOURNEY** 🛍️\n\n{product_response.content}"
+        
+        return combined_response
         
     except Exception as e:
         return f"🔮 The cosmic energies encountered interference: {str(e)}"
@@ -425,48 +353,6 @@ def analyze_handprint_image(image_file):
     except Exception as e:
         return f"🔮 The palm reading energies are disturbed: {str(e)}"
 
-def analyze_research_paper(pdf_file, analysis_type="summary"):
-    """Handle research paper analysis."""
-    if pdf_file is None:
-        return "📄 Please upload a PDF research paper for mystical academic analysis."
-    
-    try:
-        # Get the file path
-        pdf_path = pdf_file.name if hasattr(pdf_file, 'name') else str(pdf_file)
-        
-        # Extract text from PDF
-        pdf_text = extract_text_from_pdf(pdf_path)
-        
-        if "Error" in pdf_text:
-            # Try alternative extraction method
-            pdf_text = extract_text_from_pdf_pypdf2(pdf_path)
-        
-        if "Error" in pdf_text or len(pdf_text.strip()) < 100:
-            return f"📄 Unable to extract readable text from the PDF: {pdf_text}"
-        
-        # Add message to chat history
-        user_message = HumanMessage(content=f"I have uploaded a research paper for {analysis_type}.")
-        chat_history.add_message(user_message)
-        
-        # Create tool call message based on analysis type
-        if analysis_type == "summary":
-            tool_message = HumanMessage(content=f"Please summarize this research paper: {pdf_text}")
-        else:  # explanation
-            tool_message = HumanMessage(content=f"Please explain this research paper thoroughly: {pdf_text}")
-        
-        # Create state
-        initial_state = {"messages": [tool_message]}
-        
-        # Run the graph
-        result = app.invoke(initial_state)
-        ai_response = result["messages"][-1]
-        
-        chat_history.add_message(ai_response)
-        return ai_response.content
-        
-    except Exception as e:
-        return f"📄 The academic analysis energies are disrupted: {str(e)}"
-
 def quick_reading(topic):
     """Generate quick readings for specific topics."""
     try:
@@ -494,7 +380,7 @@ def create_gradio_app():
     """Create the Gradio interface."""
     
     with gr.Blocks(
-        title="🔮 AI Fortune Teller & Research Assistant - nongpalm หมอลักฟันทิ้ง", 
+        title="🔮 AI Fortune Teller - nongpalm หมอลักฟันทิ้ง", 
         theme=gr.themes.Soft(),
         css="""
         .gradio-container {
@@ -509,44 +395,41 @@ def create_gradio_app():
     ) as interface:
         
         gr.Markdown("""
-        # 🔮 Welcome to nongpalm หมอลักฟันทิ้ง's Mystical & Academic Portal ✨📚
+        # 🔮 Welcome to nongpalm หมอลักฟันทิ้ง's Mystical โบรท่า ✨
         
-        *Step into the realm where cosmic wisdom meets scholarly insight...*
+        *Step into the realm of cosmic wisdom and discover what the universe has in store for you...*
         
-        **Services Available:**
-        - 🌟 **Mystical Services**: Numerology, palm reading, life guidance
-        - 📚 **Academic Services**: Research paper summarization and explanation
+        **Mystical Services Available:**
+        - 🌟 Personalized numerology readings based on your name and birth date
+        - 🖐️ Ancient handprint analysis and palm reading
+        - 💕 Love, Career, and Wealth guidance from the cosmic forces
         - 🔮 Interactive fortune telling with mystical wisdom
-        - 📄 Upload PDFs for detailed academic analysis
         """)
         
         with gr.Row():
             with gr.Column(scale=2):
-                initial_message = ("", """🔮 Greetings, dear seeker! I am nongpalm หมอลักฟันทิ้ง, your mystical guide through cosmic realms AND academic mysteries! ✨📚
-
-🌟 **For Mystical Readings**: Share your name and birth date for personalized fortune insights
-📄 **For Academic Analysis**: Upload a research paper PDF for mystical scholarly analysis
-
-What wisdom do you seek today? 🔮🎓""")
+                initial_message = ("", "🔮 Greetings, dear seeker! I am nongpalm หมอลักฟันทิ้ง, your mystical guide through the cosmic realms. ✨\n\n🌟 To provide you with the most accurate and personalized fortune reading, I need to attune myself to your cosmic vibrations.\n\n📜 Please share with me:\n1. **Your full name** (as it appears in your heart)\n2. **Your birth date** (day/month/year)\n\nOnce I have these sacred details, I can unlock the mysteries of your destiny and provide profound insights into your future! 🔮✨")
                 
                 chatbot = gr.Chatbot(
                     value=[initial_message],
                     height=500,
-                    placeholder="🔮 nongpalm หมอลักฟันทิ้ง awaits your questions about destiny or academia...",
+                    placeholder="🔮 nongpalm หมอลักฟันทิ้ง gazes into the cosmic void, awaiting your presence...",
                     avatar_images=("👤", "🔮"),
                     show_label=False
                 )
                 
+                
+                
                 with gr.Row():
                     msg = gr.Textbox(
-                        placeholder="Ask about fortune, destiny, or academic papers...",
+                        placeholder="Ask about your fortune, destiny, or seek mystical guidance...",
                         label="Your Message to the Oracle",
                         scale=4
                     )
                     submit_btn = gr.Button("🔮 Consult Oracle", variant="primary", scale=1)
                 
                 with gr.Row():
-                    clear_btn = gr.Button("🌟 New Session", variant="secondary")
+                    clear_btn = gr.Button("🌟 New Reading", variant="secondary")
                     love_btn = gr.Button("💕 Love Fortune")
                     career_btn = gr.Button("💼 Career Destiny") 
                     wealth_btn = gr.Button("💰 Wealth Vision")
@@ -558,24 +441,14 @@ What wisdom do you seek today? 🔮🎓""")
                     file_types=["image"],
                     type="filepath"
                 )
-                analyze_palm_btn = gr.Button("📖 Read My Palm", variant="primary")
-                
-                gr.Markdown("### 📚 Academic Paper Analysis")
-                paper_file = gr.File(
-                    label="Upload Research Paper (PDF)",
-                    file_types=[".pdf"],
-                    type="filepath"
-                )
-                with gr.Row():
-                    summarize_btn = gr.Button("📊 Summarize Paper", variant="primary")
-                    explain_btn = gr.Button("🎓 Explain Thoroughly", variant="secondary")
+                analyze_btn = gr.Button("📖 Read My Palm", variant="primary")
                 
                 gr.Markdown("### 🌟 Quick Mystical Insights")
                 gr.Markdown("""
-                *Click for instant cosmic guidance:*
-                - 💕 **Love**: Romantic destiny insights
-                - 💼 **Career**: Professional success guidance  
-                - 💰 **Wealth**: Financial prosperity vision
+                *Click the buttons below for instant cosmic guidance:*
+                - 💕 **Love**: Romantic destiny and soulmate insights
+                - 💼 **Career**: Professional success and life purpose  
+                - 💰 **Wealth**: Financial prosperity and abundance
                 """)
         
         # Event handlers
@@ -593,18 +466,6 @@ What wisdom do you seek today? 🔮🎓""")
             result = analyze_handprint_image(file)
             return result
         
-        def handle_paper_summary(file):
-            if file is None:
-                return "📄 Please upload a PDF research paper for analysis."
-            result = analyze_research_paper(file, "summary")
-            return result
-        
-        def handle_paper_explanation(file):
-            if file is None:
-                return "📄 Please upload a PDF research paper for explanation."
-            result = analyze_research_paper(file, "explanation")
-            return result
-        
         def handle_quick_reading(topic, chat_history_ui):
             question = f"Quick {topic} Reading"
             bot_message = quick_reading(topic)
@@ -617,9 +478,7 @@ What wisdom do you seek today? 🔮🎓""")
         
         clear_btn.click(lambda: ([], ""), outputs=[chatbot, msg])
         
-        analyze_palm_btn.click(handle_handprint, handprint_file, msg)
-        summarize_btn.click(handle_paper_summary, paper_file, msg)
-        explain_btn.click(handle_paper_explanation, paper_file, msg)
+        analyze_btn.click(handle_handprint, handprint_file, msg)
         
         love_btn.click(lambda x: handle_quick_reading("Love", x), chatbot, chatbot)
         career_btn.click(lambda x: handle_quick_reading("Career", x), chatbot, chatbot)
@@ -627,15 +486,13 @@ What wisdom do you seek today? 🔮🎓""")
         
         gr.Markdown("""
         ---
-        ### 🔮 About nongpalm หมอลักฟันทิ้ง's Enhanced Oracle
+        ### 🔮 About nongpalm หมอลักฟันทิ้ง's AI Oracle
         
-        *Experience the fusion of ancient mystical wisdom, cutting-edge AI, and scholarly analysis. 
-        nongpalm หมอลักฟันทิ้ง now channels both cosmic energies and academic insights through 
-        advanced language models.*
+        *Experience the fusion of ancient mystical wisdom and cutting-edge AI technology. 
+        nongpalm หมอลักฟันทิ้ง channels cosmic energies through advanced language models to provide 
+        personalized fortune telling, numerology readings, and life guidance.*
         
-        **New Features**: 📚 Upload research papers for AI-powered summarization and explanation
-        
-        **Remember**: *Both destiny and knowledge are shaped by wisdom and understanding.* ✨🎓
+        **Remember**: *The future is not set in stone, but shaped by your choices and cosmic alignment.* ✨
         """)
     
     return interface

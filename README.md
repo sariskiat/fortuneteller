@@ -1,4 +1,6 @@
-# fortuneteller
+# 🔮 AI Fortune Teller & Research Assistant
+
+Enhanced with **Paper Summarization & Explanation Capabilities**
 
 # Getting Started
 
@@ -8,14 +10,14 @@ We recommend using the [Anaconda](https://www.anaconda.com/) package manager to 
 
 1. open your terminal
 ```bash
-2. conda create -n langgraph_env python=3.10 ipython && conda activate langgraph_env && pip install langgraph langchain langchain_openai langchain_community python-dotenv chromadb langchain_chroma gradio
+2. conda create -n langgraph_env python=3.10 ipython && conda activate langgraph_env && pip install langgraph langchain langchain_openai langchain_community python-dotenv chromadb langchain_chroma gradio PyPDF2 pdfplumber reportlab
 ```
 3. copy the code from python.py please fill in your api key <img width="406" alt="image" src="https://github.com/user-attachments/assets/42fd78d0-0a3b-4c3f-888c-1adb34f8940a" />
 then run
 
-# 🔮 AI Fortune Teller Implementation: "nongpalm หมอลักฟันทิ้ง"
+# 🔮 AI Fortune Teller & Research Assistant: "nongpalm หมอลักฟันทิ้ง"
 
-This solution creates a **mystical fortune telling experience** using modern AI technologies. Below is an overview of its implementation, architecture, and features.
+This enhanced solution creates a **mystical fortune telling experience** with **academic paper analysis capabilities** using modern AI technologies. Below is an overview of its implementation, architecture, and features.
 
 ---
 
@@ -48,6 +50,21 @@ This solution creates a **mystical fortune telling experience** using modern AI 
   - 💼 Career
   - 💰 Wealth
 
+### 📚 NEW: Academic Paper Analysis
+
+- **Paper Summarization**  
+  Upload PDF research papers for AI-powered summarization including:
+  - Main research questions and methodology
+  - Key findings and conclusions
+  - Significance and implications
+
+- **Thorough Explanation**  
+  Get detailed explanations of complex research with:
+  - Background context and technical concepts
+  - Results interpretation and real-world applications
+  - Limitations and broader field connections
+  - Accessible language while maintaining academic accuracy
+
 ---
 
 ## 🧠 Agent Architecture
@@ -56,10 +73,12 @@ This solution creates a **mystical fortune telling experience** using modern AI 
   A consistent fortune teller identity, speaking with mystical flair and emoji-laced responses.
 
 - **Tool Integration**  
-  Uses three specialized tools:
+  Uses five specialized tools:
   - `image_analysis_tool`: Interprets uploaded palm images.
   - `numerology_reading`: Analyzes names and birthdates for numerology profiles.
   - `provide_life_guidance`: Responds to user queries in themed categories.
+  - `summarize_research_paper`: NEW - Analyzes and summarizes academic papers.
+  - `explain_research_paper`: NEW - Provides thorough explanations of research papers.
 
 ---
 
@@ -73,6 +92,9 @@ This solution creates a **mystical fortune telling experience** using modern AI 
 
 - **Palm Reading Upload**:  
   File uploader for hand images.
+
+- **PDF Paper Upload**: NEW  
+  File uploader for research papers (PDF format) with options for summarization or thorough explanation.
 
 - **Themed Design**:  
   Custom CSS for a mystical and engaging aesthetic.
