@@ -8,3 +8,6 @@ langchain-chroma
 gradio
 ipython
 jupyter
+PyPDF2
+pdfplumber
+reportlab
